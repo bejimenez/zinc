@@ -1,6 +1,6 @@
 // src/components/editor/EditorView.tsx
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   Controls,
@@ -13,10 +13,19 @@ import 'reactflow/dist/style.css';
 
 import { Button } from '@/components/ui/button';
 import type { ScriptData } from '@/App';
-import { NodePalette } from './NodePalette'; // Import our new component
+import { NodePalette } from './NodePalette';
+import type { NodeDefinition } from './NodePalette';
+import { CustomNode } from './CustomNode';
 
 const initialNodes: Node[] = [
-  { id: '1', position: { x: 100, y: 100 }, data: { label: 'On Game Start' }, type: 'eventOnStart' },
+  // update this to use our custom node from the start
+  { 
+    id: '1', 
+    position: { x: 100, y: 100 }, 
+    // The data now needs to match what CustomNode expects
+    data: { label: 'On Game Start', color: 'border-rose-500' }, 
+    type: 'CustomNode' // Use the registered type name
+  },
 ];
 const initialEdges: Edge[] = [];
 
@@ -33,13 +42,15 @@ export default function EditorView({ onPlay }: EditorViewProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
+  const nodeTypes = useMemo(() => ({ CustomNode: CustomNode }), []);
+
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
 
   // This function is passed to our NodePalette
-  const handleNodeSelect = useCallback((nodeType: string) => {
+  const handleNodeSelect = useCallback((nodeDefinition: NodeDefinition) => {
     if (!reactFlowInstance) return;
 
     // Use the viewport to place the new node in the center of the current screen
@@ -50,9 +61,12 @@ export default function EditorView({ onPlay }: EditorViewProps) {
 
     const newNode: Node = {
       id: getUniqueId(),
-      type: nodeType, // Use the type from the palette
+      type: 'CustomNode', // Use the type from the palette
       position,
-      data: { label: `${nodeType}` }, // Simple label for now
+      data: { 
+        label: nodeDefinition.label, 
+        color: nodeDefinition.color,
+      }, 
     };
 
     setNodes((nds) => nds.concat(newNode));
@@ -84,6 +98,7 @@ export default function EditorView({ onPlay }: EditorViewProps) {
       onConnect={onConnect}
           onInit={setReactFlowInstance} // Save instance to calculate positions
           fitView
+          nodeTypes={nodeTypes} // Register custom node type
         >
           <Controls />
           <Background />

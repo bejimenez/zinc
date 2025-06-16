@@ -3,17 +3,25 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Define the color mapping for categories
+const CATEGORY_COLORS: Record<string, string> = {
+    Events: 'border-rose-500',
+    Actions: 'border-cyan-500',
+    Logic: 'border-amber-500',
+};
+
 // Define the structure of our nodes
 export interface NodeDefinition {
   type: string;
   label: string;
   category: 'Events' | 'Actions' | 'Logic';
+  color: string; // the tailwind CSS class for the border color
   // We can add default data for the node later
   // defaultData?: Record<string, any>; 
 }
 
 // Our library of available nodes
-const NODE_DEFINITIONS: NodeDefinition[] = [
+const BASE_NODE_DEFINITIONS: Omit<NodeDefinition, 'color'>[] = [
   { type: 'eventOnStart', label: 'On Game Start', category: 'Events' },
   { type: 'eventOnUpdate', label: 'On Update', category: 'Events' },
   { type: 'actionMove', label: 'Move Object', category: 'Actions' },
@@ -21,6 +29,12 @@ const NODE_DEFINITIONS: NodeDefinition[] = [
   { type: 'actionPlaySound', label: 'Play Sound', category: 'Actions' },
   { type: 'logicIf', label: 'If Condition', category: 'Logic' },
 ];
+
+// Automatically assign colors based on category
+const NODE_DEFINITIONS: NodeDefinition[] = BASE_NODE_DEFINITIONS.map(node => ({
+    ...node,
+    color: CATEGORY_COLORS[node.category],
+}));
 
 // Group nodes by category for easier rendering
 const nodeGroups = NODE_DEFINITIONS.reduce((acc, node) => {
@@ -33,7 +47,7 @@ const nodeGroups = NODE_DEFINITIONS.reduce((acc, node) => {
 
 
 interface NodePaletteProps {
-  onNodeSelect: (nodeType: string) => void;
+  onNodeSelect: (nodeDefinition: NodeDefinition) => void;
 }
 
 export function NodePalette({ onNodeSelect }: NodePaletteProps) {
@@ -55,7 +69,7 @@ export function NodePalette({ onNodeSelect }: NodePaletteProps) {
                   key={node.type}
                   variant="outline"
                   className="h-20 flex flex-col gap-1"
-                  onClick={() => onNodeSelect(node.type)}
+                  onClick={() => onNodeSelect(node)}
                 >
                   {/* You could add an icon here later */}
                   <span className="text-xs text-center">{node.label}</span>
