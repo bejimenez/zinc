@@ -1,22 +1,28 @@
 // src/components/editor/EditorView.tsx
-import { useCallback } from 'react';
+
+import { useState, useCallback } from 'react';
 import ReactFlow, {
   addEdge,
-  useNodesState,
-  useEdgesState,
-  MiniMap,
   Controls,
   Background,
+  useNodesState,
+  useEdgesState,
 } from 'reactflow';
-import type { Node, Edge, OnConnect } from 'reactflow';
+import type { Node, Edge, OnConnect, ReactFlowInstance } from 'reactflow';
 import 'reactflow/dist/style.css';
+
 import { Button } from '@/components/ui/button';
-import type { ScriptData } from '@/App'; // Import the type
+import type { ScriptData } from '@/App';
+import { NodePalette } from './NodePalette'; // Import our new component
 
 const initialNodes: Node[] = [
-  { id: '1', position: { x: 100, y: 100 }, data: { label: 'Start' }, type: 'input' },
+  { id: '1', position: { x: 100, y: 100 }, data: { label: 'On Game Start' }, type: 'eventOnStart' },
 ];
 const initialEdges: Edge[] = [];
+
+// A counter to ensure unique node IDs
+let id = 2;
+const getUniqueId = () => `${id++}`;
 
 interface EditorViewProps {
   onPlay: (scriptData: ScriptData) => void;
@@ -25,21 +31,32 @@ interface EditorViewProps {
 export default function EditorView({ onPlay }: EditorViewProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
 
-  let nodeId = 2;
-  const onAddNode = () => {
-    const newNode = {
-      id: `${nodeId++}`,
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: { label: `Node ${nodeId - 1}` },
+  // This function is passed to our NodePalette
+  const handleNodeSelect = useCallback((nodeType: string) => {
+    if (!reactFlowInstance) return;
+
+    // Use the viewport to place the new node in the center of the current screen
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 3, // A bit higher than center to feel natural
+    });
+
+    const newNode: Node = {
+      id: getUniqueId(),
+      type: nodeType, // Use the type from the palette
+      position,
+      data: { label: `${nodeType}` }, // Simple label for now
     };
+
     setNodes((nds) => nds.concat(newNode));
-  };
+  }, [reactFlowInstance, setNodes]);
   
   const handlePlayClick = () => {
     // Pass the current state of nodes and edges
@@ -47,24 +64,36 @@ export default function EditorView({ onPlay }: EditorViewProps) {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <div className="absolute top-2 right-2 z-10 flex gap-2">
-        <Button onClick={onAddNode}>Add Node</Button>
+    // Main container with flex layout
+    <div className="w-screen h-screen flex flex-col">
+      
+      {/* Top bar for global actions */}
+      <div className="p-2 border-b border-border bg-background flex justify-end">
         <Button onClick={handlePlayClick} variant="secondary">
           Play
         </Button>
-      </div>      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        fitView
-      >
-        <Controls />
-        <MiniMap />
-        <Background />
-      </ReactFlow>
+      </div>
+
+      {/* React Flow canvas fills the remaining space */}
+      <div className="flex-grow">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+          onInit={setReactFlowInstance} // Save instance to calculate positions
+          fitView
+        >
+          <Controls />
+          <Background />
+        </ReactFlow>
+      </div>
+
+      {/* Bottom Node Palette with a fixed height */}
+      <div className="h-48">
+        <NodePalette onNodeSelect={handleNodeSelect} />
+      </div>
     </div>
   );
 }
