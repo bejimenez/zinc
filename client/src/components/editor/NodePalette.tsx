@@ -24,6 +24,7 @@ export interface NodeDefinition {
 const BASE_NODE_DEFINITIONS: Omit<NodeDefinition, 'color'>[] = [
   { type: 'eventOnStart', label: 'On Game Start', category: 'Events' },
   { type: 'eventOnUpdate', label: 'On Update', category: 'Events' },
+  { type: 'actionSpwanPlayer', label: 'Spawn Player', category: 'Actions' },
   { type: 'actionMove', label: 'Move Object', category: 'Actions' },
   { type: 'actionRotate', label: 'Rotate Object', category: 'Actions' },
   { type: 'actionPlaySound', label: 'Play Sound', category: 'Actions' },

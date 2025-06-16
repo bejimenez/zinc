@@ -1,12 +1,17 @@
 // src/phaser/scenes/MainScene.ts
+
 import Phaser from "phaser";
 import type { ScriptData } from "@/App";
-// You'll create and import your interpreter here later
-// import { Interpreter } from '@/lib/interpreter';
+import { Interpreter } from "@/lib/interpreter";
 
 export class MainScene extends Phaser.Scene {
   private scriptData?: ScriptData;
-  // private interpreter?: Interpreter;
+  private interpreter?: Interpreter;
+
+  // This Map will store all game objects created by the visual script.
+  // The key is the 'Object ID' from the node (e.g., 'player'),
+  // and the value is the Phaser GameObject itself.
+  public gameObjects = new Map<string, Phaser.GameObjects.GameObject>();
 
   constructor() {
     super("MainScene");
@@ -14,12 +19,14 @@ export class MainScene extends Phaser.Scene {
 
   init(data: { scriptData: ScriptData }) {
     this.scriptData = data.scriptData;
-    console.log("Phaser scene received script data:", this.scriptData);
+    // Clear the map for each new run
+    this.gameObjects.clear();
   }
 
   preload() {
-    // You can load assets here later
-    // this.load.image('player', 'path/to/player.png');
+    // Load the assets we created in Step 1
+    this.load.image("red", "/assets/red_square.png");
+    this.load.image("blue", "/assets/blue_square.png");
   }
 
   create() {
@@ -28,18 +35,15 @@ export class MainScene extends Phaser.Scene {
       fontSize: "24px",
     });
 
-    // In the future, this is where you'll initialize your interpreter
-    // this.interpreter = new Interpreter(this, this.scriptData);
-    // this.interpreter.triggerEvent('onStart');
-
-    // For now, let's just show some data from the script
     if (this.scriptData) {
-      this.add.text(
-        20,
-        60,
-        `Editor has ${this.scriptData.nodes.length} nodes.`,
-        { color: "#ffff00" }
-      );
+      // Initialize the interpreter and tell it to start the game
+      this.interpreter = new Interpreter(this, this.scriptData);
+      this.interpreter.triggerEvent("eventOnStart");
     }
+  }
+
+  update() {
+    // This will be used later for 'On Update' events
+    // this.interpreter?.triggerEvent('eventOnUpdate');
   }
 }
